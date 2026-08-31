@@ -4,6 +4,8 @@
 
 纯前端单页应用，浏览器打开 `index.html` 即可运行——零依赖、零外部素材，全部画面由 Canvas 程序化绘制。
 
+在线：https://e-ver1024.github.io/stardew/
+
 ## 特性
 
 - **纯前端**：HTML + CSS + 原生 JavaScript，无框架、无构建工具
