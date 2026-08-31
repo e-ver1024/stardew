@@ -139,10 +139,10 @@ Object.keys(FORAGE).forEach(function (k) {
 
 /* 鱼 */
 const FISH = [
-  { id: 'carp',   name: '鲤鱼',   sell: 30, energy: 20, color: '#c08a4a', speed: 1.0, size: 1.0 },
-  { id: 'catfish',name: '鲶鱼',   sell: 45, energy: 24, color: '#7a6a52', speed: 1.3, size: 1.2 },
-  { id: 'bass',   name: '鲈鱼',   sell: 60, energy: 28, color: '#6f8f5a', speed: 1.6, size: 1.1 },
-  { id: 'salmon', name: '鲑鱼',   sell: 75, energy: 32, color: '#d08a72', speed: 2.0, size: 1.3 }
+  { id: 'carp',   name: '鲤鱼',   sell: 30, energy: 20, color: '#c08a4a', speed: 1.0, size: 1.0, behavior: 'mixed' },
+  { id: 'catfish',name: '鲶鱼',   sell: 45, energy: 24, color: '#7a6a52', speed: 1.2, size: 1.2, behavior: 'smooth' },
+  { id: 'bass',   name: '鲈鱼',   sell: 60, energy: 28, color: '#6f8f5a', speed: 1.5, size: 1.1, behavior: 'dart' },
+  { id: 'salmon', name: '鲑鱼',   sell: 75, energy: 32, color: '#d08a72', speed: 2.0, size: 1.3, behavior: 'wild' }
 ];
 FISH.forEach(function (f) {
   ITEMS[f.id] = {

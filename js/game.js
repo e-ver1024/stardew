@@ -830,7 +830,8 @@ function startFishing(tx, ty) {
   Game.fishing = {
     phase: 'wait', t: 0, wait: 1.2 + Math.random() * 3.2,
     fish: pool[idx], p: 0.5, v: 0, fishP: 0.5, fishV: 0,
-    target: 0.5, timer: 0, progress: 0.28, tx: tx, ty: ty
+    target: 0.5, timer: 0, progress: 0.28, tx: tx, ty: ty,
+    perfect: true, dart: false, dashTimer: 0
   };
   swing('rod');
   toast('抛竿了……等鱼上钩');
@@ -865,19 +866,35 @@ function updateFishing(dt) {
     f.p += f.v * dt;
     if (f.p < 0) { f.p = 0; f.v = 0; }
     if (f.p > 1 - barH) { f.p = 1 - barH; f.v = 0; }
-    // 鱼
+    // 鱼（按 behavior 决定移动模式：mixed 随机 / smooth 平滑 / dart 猛冲 / wild 狂野）
+    const beh = f.fish.behavior || 'mixed';
+    const fspd = f.fish.speed || 1;
     f.timer -= dt;
     if (f.timer <= 0) {
-      f.timer = 0.4 + Math.random() * 0.9;
-      f.target = Math.random();
+      if (beh === 'dart') {
+        f.timer = 0.7 + Math.random() * 1.4; f.target = Math.random(); f.dart = true;
+      } else if (beh === 'wild') {
+        f.timer = 0.18 + Math.random() * 0.45; f.target = Math.random();
+      } else if (beh === 'smooth') {
+        f.timer = 0.6 + Math.random() * 1.1; f.target = Math.random();
+      } else {
+        f.timer = 0.35 + Math.random() * 0.9; f.target = Math.random();
+      }
     }
-    const sp = 0.6 + f.fish.speed * 0.42;
-    f.fishP += Math.sign(f.target - f.fishP) * Math.min(Math.abs(f.target - f.fishP), sp * dt);
+    let mvSpd;
+    if (beh === 'dart') mvSpd = f.dart ? 2.6 * fspd : 0.06;
+    else if (beh === 'wild') mvSpd = 1.9 * fspd;
+    else if (beh === 'smooth') mvSpd = 0.7 * fspd;
+    else mvSpd = 0.6 + fspd * 0.42;
+    f.fishP += Math.sign(f.target - f.fishP) * Math.min(Math.abs(f.target - f.fishP), mvSpd * dt);
     f.fishP = Math.max(0, Math.min(1, f.fishP));
+    if (beh === 'dart' && Math.abs(f.target - f.fishP) < 0.02) f.dart = false;
     // 判定
     const bc = f.p + barH / 2, fc = f.fishP;
     const overlap = Math.abs(bc - fc) < barH * 0.62;
-    f.progress += (overlap ? 0.36 : -0.30) * dt;
+    if (!overlap) f.perfect = false;
+    const gain = Math.max(0.22, 0.52 - fspd * 0.12);
+    f.progress += (overlap ? gain : -0.46) * dt;
     if (f.progress >= 1) endFishing(true);
     else if (f.progress <= 0) endFishing(false);
   }
@@ -888,10 +905,16 @@ function endFishing(ok) {
   Game.fishing = null;
   dom.fishingPanel.classList.add('hidden');
   if (ok) {
-    addItem(f.fish.id, 1);
+    const qty = f.perfect ? 2 : 1;
+    addItem(f.fish.id, qty);
     sfx('coin');
-    floater(Game.player.x, Game.player.y - 40, '钓到 ' + f.fish.name + '！', '#ffe07a');
-    toast('钓到 ' + f.fish.name + '（可卖 🪙' + f.fish.sell + '）');
+    if (f.perfect) {
+      floater(Game.player.x, Game.player.y - 40, '完美！' + f.fish.name, '#7af0a0');
+      toast('完美钓鱼！获得 ' + qty + ' 条 ' + f.fish.name + '（可卖 🪙' + (f.fish.sell * qty) + '）');
+    } else {
+      floater(Game.player.x, Game.player.y - 40, '钓到 ' + f.fish.name + '！', '#ffe07a');
+      toast('钓到 ' + f.fish.name + '（可卖 🪙' + f.fish.sell + '）');
+    }
   } else {
     sfx('error');
     toast('鱼儿溜走了……');
@@ -905,9 +928,9 @@ function drawFishingUI() {
   const x = Game.W - 96, y = 120, w = 34, h = 300;
   ctx.save();
   ctx.fillStyle = 'rgba(20,26,40,0.82)';
-  ctx.fillRect(x - 8, y - 30, w + 16, h + 60);
+  ctx.fillRect(x - 8, y - 30, w + 40, h + 60);
   ctx.strokeStyle = '#e8d9a0'; ctx.lineWidth = 2;
-  ctx.strokeRect(x - 8.5, y - 30.5, w + 17, h + 61);
+  ctx.strokeRect(x - 8.5, y - 30.5, w + 41, h + 61);
   // 轨道
   ctx.fillStyle = 'rgba(255,255,255,0.12)';
   ctx.fillRect(x, y, w, h);
@@ -925,14 +948,18 @@ function drawFishingUI() {
   ctx.fillRect(x + 3, by, w - 6, barH);
   ctx.strokeStyle = 'rgba(0,0,0,0.4)';
   ctx.strokeRect(x + 3.5, by + 0.5, w - 7, barH - 1);
-  // 进度
+  // 进度（右侧竖条，原版布局：从下往上满）
+  const px = x + w + 10, pw = 12;
   ctx.fillStyle = 'rgba(0,0,0,0.5)';
-  ctx.fillRect(x - 4, y - 22, w + 8, 12);
-  ctx.fillStyle = '#6fd0f0';
-  ctx.fillRect(x - 2, y - 20, (w + 4) * Math.max(0, f.progress), 8);
+  ctx.fillRect(px, y, pw, h);
+  const ph = Math.max(0, f.progress) * h;
+  ctx.fillStyle = f.perfect ? '#7af0a0' : '#6fd0f0';
+  ctx.fillRect(px, y + (h - ph), pw, ph);
+  ctx.strokeStyle = 'rgba(255,255,255,0.35)';
+  ctx.strokeRect(px + 0.5, y + 0.5, pw - 1, h - 1);
   ctx.fillStyle = '#fff';
   ctx.font = '11px sans-serif'; ctx.textAlign = 'center';
-  ctx.fillText('按住空格', x + w / 2, y + h + 20);
+  ctx.fillText(f.perfect ? '完美中·按住' : '按住空格', x + w / 2, y + h + 20);
   ctx.restore();
 }
 
