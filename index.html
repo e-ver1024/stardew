@@ -1,0 +1,137 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width,initial-scale=1">
+<title>Vladilena·Milizé 的星露谷物语</title>
+<link rel="stylesheet" href="css/style.css">
+</head>
+<body>
+
+<canvas id="cv"></canvas>
+
+<!-- ============ HUD ============ -->
+<div id="hud">
+  <div id="topbar">
+    <div class="chip" id="chipDate">春 1日 周一</div>
+    <div class="chip" id="chipTime">上午 6:00</div>
+    <div class="chip" id="chipWeather">☀ 晴天</div>
+    <div class="chip money" id="chipMoney">🪙 500</div>
+    <div class="chip energy">
+      ⚡
+      <div class="ebar"><div id="energyFill"></div></div>
+      <span id="energyText">120/120</span>
+    </div>
+    <button class="iconbtn" id="btnMute" title="音效开关">🔊</button>
+    <button class="iconbtn" id="btnHelp" title="操作说明 (H)">?</button>
+  </div>
+
+  <div id="hotbar"></div>
+
+  <div id="tipbar">
+    <b>WASD</b> 移动 · <b>鼠标左键</b> 使用工具/收获 · <b>空格</b> 对面前使用 ·
+    <b>E</b> 交互 · <b>1~0</b> 切换物品 · <b>Tab</b> 背包 · <b>F</b> 食用 · <b>H</b> 帮助
+  </div>
+
+  <div id="toast"></div>
+  <div id="fishingPanel" class="hidden">🎣 钓鱼中：按住 <b>鼠标左键</b> 或 <b>空格</b> 让黄色浮标跟着鱼</div>
+</div>
+
+<!-- ============ 标题界面 ============ -->
+<div id="titleScreen">
+  <div class="title-box">
+    <div class="logo">Vladilena·Milizé</div>
+    <div class="logo-sub">的 星 露 谷 物 语</div>
+    <div class="sub">STARDEW VALLEY · 网页复刻版</div>
+    <p class="desc">
+      你继承了爷爷留下的旧农场。开垦土地、播种浇水、钓鱼挖矿，
+      在四季轮回中把荒地经营成属于你的星露谷。
+    </p>
+    <div class="title-btns">
+      <button class="btn big" id="btnNew">🌱 开始新游戏</button>
+      <button class="btn big" id="btnContinue">💾 继续游戏</button>
+      <button class="btn big ghost" id="btnHelpTitle">📖 操作说明</button>
+    </div>
+    <div class="tip">提示：全部画面由 Canvas 程序化绘制，无任何外部素材。</div>
+  </div>
+</div>
+
+<!-- ============ 背包 ============ -->
+<div id="invPanel" class="panel hidden">
+  <div class="panel-head">
+    <h3>🎒 背包</h3>
+    <button class="btn small" onclick="closeAllPanels()">关闭 (Tab)</button>
+  </div>
+  <div id="invGrid"></div>
+  <div class="panel-foot">点击格子可与当前选中的快捷栏格交换位置 · 前 10 格对应数字键 1~0</div>
+</div>
+
+<!-- ============ 商店 ============ -->
+<div id="shopPanel" class="panel hidden">
+  <div class="panel-head">
+    <h3 id="shopTitle">🏪 皮埃尔杂货铺</h3>
+    <button class="btn small" onclick="closeAllPanels()">关闭 (Esc)</button>
+  </div>
+  <div id="shopBody"></div>
+</div>
+
+<!-- ============ 帮助 ============ -->
+<div id="helpPanel" class="panel hidden">
+  <div class="panel-head">
+    <h3>📖 操作说明</h3>
+    <button class="btn small" onclick="closeAllPanels()">关闭</button>
+  </div>
+  <div class="help-body">
+    <div class="help-col">
+      <h4>基础操作</h4>
+      <ul>
+        <li><b>W A S D / 方向键</b>　移动</li>
+        <li><b>鼠标左键</b>　对点到的格子使用当前物品</li>
+        <li><b>空格</b>　对角色面前的格子使用</li>
+        <li><b>E</b>　交互（开门 / 睡觉 / 出货箱 / 和村民聊天）</li>
+        <li><b>数字 1~0</b>　切换快捷栏物品</li>
+        <li><b>Tab / I</b>　打开背包　<b>F</b>　食用手中食物</li>
+        <li><b>H</b>　帮助　<b>Esc</b>　关闭面板</li>
+      </ul>
+    </div>
+    <div class="help-col">
+      <h4> farming 流程</h4>
+      <ul>
+        <li>① 选 <b>锄头</b> 点击草地 → 开垦出农田</li>
+        <li>② 选 <b>种子</b> 点农田 → 播种（只能种当季作物）</li>
+        <li>③ 选 <b>洒水壶</b> 点农田 → 浇水（水边点击补水）</li>
+        <li>④ 成熟后 <b>空手点击</b> 收获，放到 <b>出货箱</b> 次日结算</li>
+        <li>作物每天浇水才会生长，<b>雨天自动浇水</b></li>
+        <li>换季时非当季作物会枯萎，注意季节</li>
+      </ul>
+    </div>
+    <div class="help-col">
+      <h4>其他玩法</h4>
+      <ul>
+        <li><b>斧头</b> 砍树 → 木材 / 树液</li>
+        <li><b>镐子</b> 敲石头 → 石头；矿洞里有铜/铁/金/煤</li>
+        <li><b>镰刀</b> 割杂草 → 纤维</li>
+        <li><b>钓鱼竿</b> 点水面 → 钓鱼小游戏（按住空格/鼠标控制浮标）</li>
+        <li><b>矿洞</b> 在森林右上角，梯子可下一层，出口梯子回到地面</li>
+        <li>每天 6:00 开始，<b>凌晨 2:00 前回家睡觉</b>，否则会累倒</li>
+        <li>体力耗尽无法干活，吃采集物或鱼可回复</li>
+      </ul>
+    </div>
+  </div>
+</div>
+
+<!-- ============ 对话框 ============ -->
+<div id="dialogPanel" class="panel hidden">
+  <div id="dialogText"></div>
+  <div id="dialogBtns"></div>
+</div>
+
+<!-- ============ 黑屏过渡 ============ -->
+<div id="fade" class="hidden"></div>
+
+<script src="js/data.js"></script>
+<script src="js/draw.js"></script>
+<script src="js/world.js"></script>
+<script src="js/game.js"></script>
+</body>
+</html>
