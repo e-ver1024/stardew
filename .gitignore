@@ -1,0 +1,4 @@
+.workbuddy/
+*.tmp
+.DS_Store
+launch_check.png
